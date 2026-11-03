@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/supabase';
+import { COMMANDS, DESCRIPTION, SHORT_DESCRIPTION } from '@/lib/texts';
 
 export const runtime = 'nodejs';
 
@@ -32,6 +33,28 @@ export async function GET(req: NextRequest) {
     const set = await call('setWebhook', { url, allowed_updates: ['message', 'callback_query'], drop_pending_updates: false });
     out.setWebhook = set.ok ? { ok: true, url } : { ok: false, error: set.description };
     out.webhookAfter = (await call('getWebhookInfo')).result;
+
+    // Bot profili: tavsifi, qisqa tavsifi va buyruqlar menyusi
+    const res = (r: { ok: boolean; description?: string }) => (r.ok ? 'ok' : r.description);
+    out.profile = {
+      description: res(await call('setMyDescription', { description: DESCRIPTION })),
+      shortDescription: res(await call('setMyShortDescription', { short_description: SHORT_DESCRIPTION })),
+      commands: res(await call('setMyCommands', { commands: COMMANDS })),
+    };
+
+    // Profil rasmi: faqat /api/setup?photo=1 bilan (Telegram rasm almashtirishni cheklaydi)
+    if (req.nextUrl.searchParams.get('photo') === '1') {
+      const img = await fetch(`https://${req.headers.get('host')}/bot-logo.png`);
+      if (!img.ok) {
+        out.profilePhoto = `bot-logo.png topilmadi (${img.status})`;
+      } else {
+        const form = new FormData();
+        form.append('photo', JSON.stringify({ type: 'static', photo: 'attach://logo' }));
+        form.append('logo', new Blob([new Uint8Array(await img.arrayBuffer())], { type: 'image/png' }), 'logo.png');
+        const r = await (await fetch(`${api}/setMyProfilePhoto`, { method: 'POST', body: form })).json();
+        out.profilePhoto = r.ok ? 'ok' : r.description;
+      }
+    }
   } catch (e) {
     out.telegramError = e instanceof Error ? e.message : String(e);
   }

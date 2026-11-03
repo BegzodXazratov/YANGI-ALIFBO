@@ -3,6 +3,7 @@ import { convertText, Direction } from '@/lib/alphabet';
 import { convertFile, FileKind } from '@/lib/files';
 import { db } from '@/lib/supabase';
 import { getFile, sendDocument, sendText } from '@/lib/telegram';
+import { BACK, HELP, WELCOME } from '@/lib/texts';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -56,12 +57,13 @@ export async function POST(req:NextRequest) {
     if(text==='/start') {
       if(!profile?.display_name) {
         await db().from('users').update({registration_step:'name'}).eq('telegram_id',user.id);
-        await sendText(chatId,'Assalomu alaykum! Botdan foydalanish uchun ro‘yxatdan o‘tamiz.\n\nIsm-familiyangizni kiriting:');
+        await sendText(chatId,WELCOME);
+        await sendText(chatId,'Ism-familiyangizni kiriting:');
       } else if(!profile?.phone_number) {
         await db().from('users').update({registration_step:'phone'}).eq('telegram_id',user.id);
         await sendText(chatId,'Ro‘yxatdan o‘tishni yakunlash uchun telefon raqamingizni ulashing.',{reply_markup:contactKeyboard});
       } else {
-        await sendText(chatId,'Assalomu alaykum! Kerakli konvertatsiya yo‘nalishini tanlang:',{reply_markup:directionKeyboard});
+        await sendText(chatId,BACK,{reply_markup:directionKeyboard});
       }
       return NextResponse.json({ok:true});
     }
@@ -81,6 +83,11 @@ export async function POST(req:NextRequest) {
       if(text.length>100) { await sendText(chatId,'Ism-familiya 100 belgidan oshmasin. Qayta kiriting:'); return NextResponse.json({ok:true}); }
       await db().from('users').update({display_name:text,registration_step:'phone'}).eq('telegram_id',user.id);
       await sendText(chatId,'Rahmat! Endi telefon raqamingizni ulashing.',{reply_markup:contactKeyboard});
+      return NextResponse.json({ok:true});
+    }
+
+    if(text==='/yordam'||text==='/help') {
+      await sendText(chatId,HELP,{reply_markup:directionKeyboard});
       return NextResponse.json({ok:true});
     }
 

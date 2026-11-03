@@ -1,0 +1,1 @@
+export default function Home(){return <main style={{fontFamily:'Arial',maxWidth:680,margin:'80px auto',padding:24}}><h1>Alifbo Converter Bot</h1><p>Telegram bot va boshqaruv paneli ishlayapti.</p><p><a href="/admin">Admin panelga o‘tish →</a></p></main>}

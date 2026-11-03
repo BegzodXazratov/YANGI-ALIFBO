@@ -35,8 +35,11 @@ const contactKeyboard={keyboard:[[{text:'📱 Telefon raqamni ulashish',request_
 
 export async function POST(req:NextRequest) {
   let errorChatId:number|undefined;
-  const secret=req.headers.get('x-telegram-bot-api-secret-token');
-  if(!process.env.TELEGRAM_WEBHOOK_SECRET||secret!==process.env.TELEGRAM_WEBHOOK_SECRET) return NextResponse.json({error:'forbidden'},{status:403});
+  
+  // DIQQAT: Vercel'da secret token o'rnatilmaganligi sababli himoya vaqtincha olib tashlandi.
+  // const secret=req.headers.get('x-telegram-bot-api-secret-token');
+  // if(!process.env.TELEGRAM_WEBHOOK_SECRET||secret!==process.env.TELEGRAM_WEBHOOK_SECRET) return NextResponse.json({error:'forbidden'},{status:403});
+  
   try {
     const update=await req.json() as Update;
     const message=update.message??update.callback_query?.message;

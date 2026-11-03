@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { convertText } from '@/lib/alphabet';
+import { convertText, Direction } from '@/lib/alphabet';
 import { convertFile, FileKind } from '@/lib/files';
 import { db } from '@/lib/supabase';
 import { getFile, sendDocument, sendText } from '@/lib/telegram';
@@ -14,7 +14,11 @@ type TgMessage = {
   document?:{file_id:string;file_name?:string;file_size?:number};
 };
 type Update = { message?:TgMessage; callback_query?:{id:string;from:TgUser;data?:string;message?:TgMessage} };
-type Direction = 'latin_to_cyrillic'|'cyrillic_to_latin';
+const DIRECTIONS: Record<string, Direction> = {
+  'Lotin → Kirill':'latin_to_cyrillic','Kirill → Lotin':'cyrillic_to_latin',
+  'Lotin → Yangi':'latin_to_new','Yangi → Lotin':'new_to_latin',
+  'Kirill → Yangi':'cyrillic_to_new','Yangi → Kirill':'new_to_cyrillic'
+};
 
 async function touchUser(user:TgUser, chatId:number) {
   const client=db();
@@ -30,7 +34,7 @@ async function logUsage(userId:number, kind:string, direction:string) {
   // Intentionally stores metadata only. Never pass or persist the submitted text or filename.
   await db().from('usage_events').insert({telegram_id:userId,input_type:kind,direction});
 }
-const directionKeyboard={keyboard:[[{text:'Lotin → Kirill'},{text:'Kirill → Lotin'}]],resize_keyboard:true};
+const directionKeyboard={keyboard:[[{text:'Lotin → Kirill'},{text:'Kirill → Lotin'}],[{text:'Lotin → Yangi'},{text:'Yangi → Lotin'}],[{text:'Kirill → Yangi'},{text:'Yangi → Kirill'}]],resize_keyboard:true};
 const contactKeyboard={keyboard:[[{text:'📱 Telefon raqamni ulashish',request_contact:true}]],resize_keyboard:true,one_time_keyboard:true};
 
 export async function POST(req:NextRequest) {
@@ -80,7 +84,7 @@ export async function POST(req:NextRequest) {
       return NextResponse.json({ok:true});
     }
 
-    if(text==='/privacy') {
+    if(text==='/privacy'||text==='/maxfiylik') {
       await sendText(chatId,'Maxfiylik: yuborgan matnlaringiz va fayllaringiz bazada saqlanmaydi. Faqat ro‘yxatdan o‘tish uchun ism, telefon raqami, Telegram ID hamda foydalanish statistikasi (vaqt, format va konvertatsiya yo‘nalishi) saqlanadi. Admin yuborgan matnlaringizni ko‘ra olmaydi.');
       return NextResponse.json({ok:true});
     }
@@ -96,10 +100,10 @@ export async function POST(req:NextRequest) {
       return NextResponse.json({ok:true});
     }
 
-    if(text==='Lotin → Kirill'||text==='Kirill → Lotin') {
-      const direction:Direction=text==='Lotin → Kirill'?'latin_to_cyrillic':'cyrillic_to_latin';
+    if(text&&DIRECTIONS[text]) {
+      const direction:Direction=DIRECTIONS[text];
       await db().from('users').update({preferred_direction:direction}).eq('telegram_id',user.id);
-      await sendText(chatId,'Tanlandi: '+text+'. Endi matn yuboring yoki TXT, DOCX, PDF fayl yuklang.\n\n/maxfiylik: ma’lumotlar haqida',{reply_markup:directionKeyboard});
+      await sendText(chatId,'Tanlandi: '+text+'. Endi matn yuboring yoki TXT, DOCX, PDF fayl yuklang.\n\nLotin, Kirill va Yangi (takomillashtirilgan) alifbo o‘rtasida istalgan yo‘nalishni tanlashingiz mumkin.\n/maxfiylik: ma’lumotlar haqida',{reply_markup:directionKeyboard});
       return NextResponse.json({ok:true});
     }
 

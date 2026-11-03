@@ -1,7 +1,8 @@
 import mammoth from 'mammoth';
 import PDFDocument from 'pdfkit';
 import { Document, Packer, Paragraph } from 'docx';
-import { convertText } from './alphabet';
+import path from 'node:path';
+import { convertText, Direction } from './alphabet';
 
 export type FileKind = 'txt' | 'docx' | 'pdf';
 
@@ -26,17 +27,19 @@ export async function makeOutput(text: string, kind: FileKind): Promise<Buffer> 
     return Packer.toBuffer(doc);
   }
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+    // Standart Helvetica Kirill va Ğ/Ş/Ç/Ö harflarini chiqara olmaydi, shuning uchun Unicode shrift ishlatiladi.
+    const fontPath = path.join(process.cwd(), 'lib', 'fonts', 'DejaVuSans.ttf');
+    const doc = new PDFDocument({ size: 'A4', margin: 48, font: fontPath });
     const chunks: Buffer[] = [];
     doc.on('data', chunk => chunks.push(Buffer.from(chunk)));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
-    doc.font('Helvetica').fontSize(11).text(text, { width: 500, lineGap: 4 });
+    doc.font(fontPath).fontSize(11).text(text, { width: 500, lineGap: 4 });
     doc.end();
   });
 }
 
-export async function convertFile(buffer: Buffer, kind: FileKind, direction: 'latin_to_cyrillic' | 'cyrillic_to_latin') {
+export async function convertFile(buffer: Buffer, kind: FileKind, direction: Direction) {
   const source = await extractText(buffer, kind);
   const converted = convertText(source, direction);
   return makeOutput(converted, kind);

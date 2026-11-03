@@ -7,7 +7,7 @@ create table if not exists public.users (
   phone_number text,
   registration_step text check (registration_step in ('name','phone')),
   chat_id bigint not null,
-  preferred_direction text check (preferred_direction in ('latin_to_cyrillic','cyrillic_to_latin')),
+  preferred_direction text check (preferred_direction in ('latin_to_cyrillic','cyrillic_to_latin','latin_to_new','new_to_latin','cyrillic_to_new','new_to_cyrillic')),
   is_blocked boolean not null default false,
   created_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
@@ -29,7 +29,7 @@ create table if not exists public.usage_events (
   id bigint generated always as identity primary key,
   telegram_id bigint not null references public.users(telegram_id) on delete cascade,
   input_type text not null check (input_type in ('text','txt','docx','pdf')),
-  direction text not null check (direction in ('latin_to_cyrillic','cyrillic_to_latin')),
+  direction text not null check (direction in ('latin_to_cyrillic','cyrillic_to_latin','latin_to_new','new_to_latin','cyrillic_to_new','new_to_cyrillic')),
   created_at timestamptz not null default now()
 );
 create index if not exists users_last_seen_idx on public.users(last_seen_at desc);

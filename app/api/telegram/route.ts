@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { convertText, Direction } from '@/lib/alphabet';
 import { convertFile, FileKind } from '@/lib/files';
 import { db } from '@/lib/supabase';
-import { getFile, sendDocument, sendText } from '@/lib/telegram';
-import { BACK, HELP, WELCOME } from '@/lib/texts';
+import { answerCallback, checkSubscription, CHANNEL_URL, getFile, sendDocument, sendText } from '@/lib/telegram';
+import { BACK, HELP, SUB_ERROR, SUB_NOT_YET, SUB_REQUIRED, SUB_THANKS, WELCOME } from '@/lib/texts';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -52,7 +52,20 @@ export async function POST(req:NextRequest) {
     if(!message||!user) return NextResponse.json({ok:true});
     const chatId=message.chat.id; errorChatId=chatId;
     const profile=await touchUser(user,chatId);
-    const text=update.message?.text?.trim();
+    const cb=update.callback_query;
+
+    // Majburiy obuna: HAR bir so'rovda tekshiriladi (obuna bo'lib keyin chiqib ketsa ham bot ishlamaydi)
+    const sub=await checkSubscription(user.id);
+    if(!sub.ok) {
+      if(cb) await answerCallback(cb.id, sub.error?SUB_ERROR:SUB_NOT_YET, true);
+      else if(sub.error) await sendText(chatId,SUB_ERROR);
+      else await sendText(chatId,SUB_REQUIRED,{reply_markup:{inline_keyboard:[[{text:'📢 Kanalga obuna bo‘lish',url:CHANNEL_URL}],[{text:'✅ Obunani tekshirish',callback_data:'check_sub'}]]}});
+      return NextResponse.json({ok:true});
+    }
+    if(cb) await answerCallback(cb.id, cb.data==='check_sub'?SUB_THANKS:undefined);
+
+    // “Obunani tekshirish” bosilgach bot /start kabi ishga tushadi
+    const text=update.message?.text?.trim() ?? (cb?.data==='check_sub'?'/start':undefined);
 
     if(text==='/start') {
       if(!profile?.display_name) {

@@ -27,3 +27,18 @@ export async function sendDocument(chatId: number, filename: string, buffer: Buf
 export async function sendText(chatId: number, text: string, extra: Record<string,unknown> = {}) {
   return tg('sendMessage', { chat_id: chatId, text, ...extra });
 }
+
+// Majburiy obuna: foydalanuvchi kanal a'zosimi? (bot kanalda ADMIN bo'lishi shart)
+export const REQUIRED_CHANNEL = process.env.REQUIRED_CHANNEL || '@usmonosphere';
+export const CHANNEL_URL = `https://t.me/${REQUIRED_CHANNEL.replace(/^@/, '')}`;
+export async function checkSubscription(userId: number): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const m = await tg('getChatMember', { chat_id: REQUIRED_CHANNEL, user_id: userId });
+    const ok = ['creator', 'administrator', 'member'].includes(m.status) || (m.status === 'restricted' && m.is_member === true);
+    return { ok };
+  } catch (e) {
+    console.error('Obunani tekshirishda xato:', e);
+    return { ok: false, error: e instanceof Error ? e.message : 'xato' };
+  }
+}
+export const answerCallback = (id: string, text?: string, alert = false) => tg('answerCallbackQuery', { callback_query_id: id, text, show_alert: alert }).catch(() => {});

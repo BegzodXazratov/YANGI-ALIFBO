@@ -37,7 +37,7 @@ export const COMMANDS = [
   { command: 'maxfiylik', description: 'Ma’lumotlar qanday saqlanishi' },
 ];
 
-export const SUB_REQUIRED = `Botdan foydalanish uchun rasmiy kanalimizga obuna bo‘ling 👇\n\nObuna bo‘lgach, “Obunani tekshirish” tugmasini bosing.`;
+export const SUB_REQUIRED = `Botdan foydalanish uchun avval @usmonosphere kanaliga obuna bo‘ling 👇\n\nObuna bo‘lgach, “✅ Obunani tekshirish” tugmasini bosing.`;
 export const SUB_ERROR = `Hozir obunani tekshirib bo‘lmadi. Birozdan keyin qayta urinib ko‘ring.`;
 export const SUB_THANKS = 'Rahmat! Obuna tasdiqlandi ✅';
 export const SUB_NOT_YET = 'Siz hali kanalga obuna bo‘lmadingiz.';

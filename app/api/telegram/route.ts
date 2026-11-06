@@ -36,7 +36,6 @@ async function logUsage(userId:number, kind:string, direction:string) {
   await db().from('usage_events').insert({telegram_id:userId,input_type:kind,direction});
 }
 const directionKeyboard={keyboard:[[{text:'Lotin → Kirill'},{text:'Kirill → Lotin'}],[{text:'Lotin → Yangi'},{text:'Yangi → Lotin'}],[{text:'Kirill → Yangi'},{text:'Yangi → Kirill'}]],resize_keyboard:true};
-const contactKeyboard={keyboard:[[{text:'📱 Telefon raqamni ulashish',request_contact:true}]],resize_keyboard:true,one_time_keyboard:true};
 
 export async function POST(req:NextRequest) {
   let errorChatId:number|undefined;
@@ -71,30 +70,16 @@ export async function POST(req:NextRequest) {
         await db().from('users').update({registration_step:'name'}).eq('telegram_id',user.id);
         await sendText(chatId,WELCOME);
         await sendText(chatId,'Ism-familiyangizni kiriting:');
-      } else if(!profile?.phone_number) {
-        await db().from('users').update({registration_step:'phone'}).eq('telegram_id',user.id);
-        await sendText(chatId,'Ro‘yxatdan o‘tishni yakunlash uchun telefon raqamingizni ulashing.',{reply_markup:contactKeyboard});
       } else {
         await sendText(chatId,BACK,{reply_markup:directionKeyboard});
       }
       return NextResponse.json({ok:true});
     }
 
-    if(update.message?.contact) {
-      const contact=update.message.contact;
-      if(contact.user_id!==user.id) {
-        await sendText(chatId,'Iltimos, faqat o‘zingizning telefon raqamingizni ulashing.',{reply_markup:contactKeyboard});
-        return NextResponse.json({ok:true});
-      }
-      await db().from('users').update({phone_number:contact.phone_number,registration_step:null}).eq('telegram_id',user.id);
-      await sendText(chatId,'Ro‘yxatdan o‘tish yakunlandi. Endi konvertatsiya yo‘nalishini tanlang:',{reply_markup:directionKeyboard});
-      return NextResponse.json({ok:true});
-    }
-
     if(profile?.registration_step==='name' && text && !text.startsWith('/')) {
       if(text.length>100) { await sendText(chatId,'Ism-familiya 100 belgidan oshmasin. Qayta kiriting:'); return NextResponse.json({ok:true}); }
-      await db().from('users').update({display_name:text,registration_step:'phone'}).eq('telegram_id',user.id);
-      await sendText(chatId,'Rahmat! Endi telefon raqamingizni ulashing.',{reply_markup:contactKeyboard});
+      await db().from('users').update({display_name:text,registration_step:null}).eq('telegram_id',user.id);
+      await sendText(chatId,'Rahmat! Endi konvertatsiya yo‘nalishini tanlang:',{reply_markup:directionKeyboard});
       return NextResponse.json({ok:true});
     }
 
@@ -104,18 +89,13 @@ export async function POST(req:NextRequest) {
     }
 
     if(text==='/privacy'||text==='/maxfiylik') {
-      await sendText(chatId,'Maxfiylik: yuborgan matnlaringiz va fayllaringiz bazada saqlanmaydi. Faqat ro‘yxatdan o‘tish uchun ism, telefon raqami, Telegram ID hamda foydalanish statistikasi (vaqt, format va konvertatsiya yo‘nalishi) saqlanadi. Admin yuborgan matnlaringizni ko‘ra olmaydi.');
+      await sendText(chatId,'Maxfiylik: yuborgan matnlaringiz va fayllaringiz bazada saqlanmaydi. Faqat ro‘yxatdan o‘tish uchun ism, Telegram ID hamda foydalanish statistikasi (vaqt, format va konvertatsiya yo‘nalishi) saqlanadi. Admin yuborgan matnlaringizni ko‘ra olmaydi.');
       return NextResponse.json({ok:true});
     }
 
-    if(!profile?.display_name || !profile?.phone_number) {
-      if(!profile?.display_name) {
-        await db().from('users').update({registration_step:'name'}).eq('telegram_id',user.id);
-        await sendText(chatId,'Avval ro‘yxatdan o‘tamiz. Ism-familiyangizni kiriting:');
-      } else {
-        await db().from('users').update({registration_step:'phone'}).eq('telegram_id',user.id);
-        await sendText(chatId,'Telefon raqamingizni ulashing:',{reply_markup:contactKeyboard});
-      }
+    if(!profile?.display_name) {
+      await db().from('users').update({registration_step:'name'}).eq('telegram_id',user.id);
+      await sendText(chatId,'Avval ro‘yxatdan o‘tamiz. Ism-familiyangizni kiriting:');
       return NextResponse.json({ok:true});
     }
 

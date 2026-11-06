@@ -15,7 +15,7 @@ export default function Privacy() {
       <p>Botdan foydalanish va hisobni yuritish uchun quyidagilar saqlanadi:</p>
       <ul>
         <li>Telegram ID, foydalanuvchi nomi (username), Telegram profilidagi ism va familiya;</li>
-        <li>ro‘yxatdan o‘tishda o‘zingiz kiritgan ism va telefon raqami;</li>
+        <li>ro‘yxatdan o‘tishda o‘zingiz kiritgan ism;</li>
         <li>tanlagan o‘girish yo‘nalishingiz (masalan, Lotin → Kirill);</li>
         <li>qo‘llanish statistikasi: o‘girish vaqti, yo‘nalishi va turi (matn/TXT/DOCX/PDF). Bu yozuvlarda matn mazmuni yo‘q.</li>
       </ul>
